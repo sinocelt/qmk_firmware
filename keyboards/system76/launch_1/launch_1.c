@@ -3,6 +3,7 @@
 
 #include "launch_1.h"
 #include "usb_mux.h"
+#include "rgb_matrix.h"
 
 #if RGB_MATRIX_ENABLE
 // LEDs by index
@@ -106,11 +107,62 @@ void matrix_scan_kb(void) {
 
 void system76_ec_unlock(void);
 
+static const uint8_t LEVELS[] = {
+    48,
+    72,
+    96,
+    144,
+    192,
+    255
+};
+static int LEVEL_I = 1;
+
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     switch(keycode) {
         case RESET:
             if (record->event.pressed) {
                 system76_ec_unlock();
+            }
+            return false;
+        case RGB_VAD:
+            if (record->event.pressed) {
+                if (LEVEL_I > 0)
+                    LEVEL_I -= 1;
+                // XXX unlocked
+                rgb_matrix_sethsv_noeeprom(
+                    rgb_matrix_config.hsv.h,
+                    rgb_matrix_config.hsv.s,
+                    LEVELS[LEVEL_I]
+                );
+            }
+            return false;
+        case RGB_VAI:
+            if (record->event.pressed) {
+                if (LEVEL_I < sizeof(LEVELS) - 1)
+                    LEVEL_I += 1;
+                // XXX unlocked
+                rgb_matrix_sethsv_noeeprom(
+                    rgb_matrix_config.hsv.h,
+                    rgb_matrix_config.hsv.s,
+                    LEVELS[LEVEL_I]
+                );
+            }
+            return false;
+        case RGB_TOG:
+            if (record->event.pressed) {
+                if (rgb_matrix_config.hsv.v == 0) {
+                    rgb_matrix_sethsv_noeeprom(
+                        rgb_matrix_config.hsv.h,
+                        rgb_matrix_config.hsv.s,
+                        LEVELS[LEVEL_I]
+                    );
+                } else {
+                    rgb_matrix_sethsv_noeeprom(
+                        rgb_matrix_config.hsv.h,
+                        rgb_matrix_config.hsv.s,
+                        0
+                    );
+                }
             }
             return false;
     }
